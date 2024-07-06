@@ -1,0 +1,12 @@
+[Unit]
+Description=My Go Application Service
+After=network.target
+
+[Service]
+User=csye6225
+Group=csye6225
+ExecStart=/opt/webapp/webapp
+
+
+[Install]
+WantedBy=multi-user.target
