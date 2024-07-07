@@ -42,7 +42,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DATABASE_URL=postgres://yourusername:yourpassword@localhost:5432/yourdatabase?sslmode=disable" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgres://kashyabmurali:postgres@localhost:5432/postgres?sslmode=disable" >> $GITHUB_ENV
 
       - name: Build
         run: go build ./...
