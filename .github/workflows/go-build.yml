@@ -40,6 +40,11 @@ jobs:
             sleep 1
           done
 
+      - name: Create uuid-ossp extension
+        run: |
+            docker exec $(docker ps -q -f ancestor=postgres:latest) psql -U kashyabmurali -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+  
+
       - name: Set environment variables
         run: |
           echo "DATABASE_URL=postgres://kashyabmurali:postgres@localhost:5432/postgres?sslmode=disable" >> $GITHUB_ENV
