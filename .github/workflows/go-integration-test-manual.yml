@@ -1,0 +1,61 @@
+name: Build and Test Without Docker
+
+
+on:
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install PostgreSQL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql postgresql-contrib
+        sudo service postgresql start
+        sudo -u postgres psql -c "CREATE USER ${{ secrets.POSTGRES_USER }} WITH ENCRYPTED PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';"
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO ${{ secrets.POSTGRES_USER }};"
+
+    - name: Configure PostgreSQL (Enable uuid-ossp)
+      run: |
+        sudo -u postgres psql -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.21.6' # Adjust based on your project's Go version
+
+    - name: Cache Go Modules
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-go-modules
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install Dependencies
+      run: go mod tidy
+
+    - name: Build Project
+      run: go build -v ./...
+
+    - name: Run Tests
+      run: go test -v ./...
+      env:
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
