@@ -19,7 +19,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y postgresql postgresql-contrib
         sudo service postgresql start
-        sudo -u postgres psql -c "CREATE USER ${{ secrets.POSTGRES_USER }} WITH ENCRYPTED PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';"
+        sudo -u postgres psql -c "CREATE USER ${{ secrets.POSTGRES_USER }} WITH SUPERUSER ENCRYPTED PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';"
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO ${{ secrets.POSTGRES_USER }};"
 
     - name: Configure PostgreSQL (Enable uuid-ossp)
