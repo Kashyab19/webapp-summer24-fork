@@ -12,14 +12,30 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Log and Verify Secrets
+      run: |
+        if [ -z "${{ secrets.POSTGRES_USER }}" ]; then
+          echo "POSTGRES_USER secret is not set"
+        else
+          echo "POSTGRES_USER secret is set"
+        fi
+        if [ -z "${{ secrets.POSTGRES_PASSWORD }}" ]; then
+          echo "POSTGRES_PASSWORD secret is not set"
+        else
+          echo "POSTGRES_PASSWORD secret is set"
+        fi
+
     - name: Install PostgreSQL
       run: |
         sudo apt-get update
         sudo apt-get install -y postgresql postgresql-contrib
         sudo service postgresql start
-        echo "Creating PostgreSQL user and setting up the database"
-        sudo -u postgres psql -c "CREATE USER \"${{ secrets.POSTGRES_USER }}\" WITH SUPERUSER ENCRYPTED PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';"
-        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO \"${{ secrets.POSTGRES_USER }}\";"
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        if [ -z "$POSTGRES_USER" ]; then POSTGRES_USER="defaultuser"; fi
+        if [ -z "$POSTGRES_PASSWORD" ]; then POSTGRES_PASSWORD="defaultpassword"; fi
+        sudo -u postgres psql -c "CREATE USER \"$POSTGRES_USER\" WITH SUPERUSER ENCRYPTED PASSWORD '$POSTGRES_PASSWORD';"
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO \"$POSTGRES_USER\";"
 
     - name: Configure PostgreSQL (Enable uuid-ossp)
       run: |
