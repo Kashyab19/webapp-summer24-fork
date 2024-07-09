@@ -1,0 +1,57 @@
+name: A Simple Go Build Check after the PR merges
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Compile Go Code
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.21.6'
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 1
+          done
+
+      - name: Create uuid-ossp extension
+        run: |
+          docker exec $(docker ps -q -f ancestor=postgres:latest) psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+
+      - name: Set environment variables
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
