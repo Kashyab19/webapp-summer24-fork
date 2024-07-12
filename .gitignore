@@ -3,3 +3,7 @@ webapp
 *.pem
 *.json
 
+*.py
+
+*.txt
+

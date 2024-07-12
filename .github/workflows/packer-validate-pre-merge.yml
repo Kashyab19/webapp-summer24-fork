@@ -1,0 +1,24 @@
+name: Packer CI before merging
+
+on:
+    pull_request:
+      branches:
+        - main
+
+jobs:
+  packer-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run packer fmt
+        run: packer fmt -check -diff .
+      - name: Check for formatting changes
+        run: git diff --exit-code
+        shell: bash
+
+  packer-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run packer validate
+        run: packer validate .
