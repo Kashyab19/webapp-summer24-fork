@@ -34,4 +34,4 @@ jobs:
         run: packer fmt -check -diff .
 
       - name: Run packer validate
-        run: PAKER_LOG=1 packer validate .
+        run: PACKER_LOG=1 packer validate .
