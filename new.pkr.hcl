@@ -46,7 +46,7 @@ build {
   sources = ["source.googlecompute.centos"]
 
   provisioner "file" {
-    source      = "./account.json"
+    source      = "account.json"
     destination = "/tmp/account.json"
   }
 
