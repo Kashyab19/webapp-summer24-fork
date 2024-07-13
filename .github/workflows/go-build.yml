@@ -3,7 +3,7 @@ name: Go Build Check
 on:
   pull_request:
     branches:
-      - main
+      - feature
 
 jobs:
   build:
