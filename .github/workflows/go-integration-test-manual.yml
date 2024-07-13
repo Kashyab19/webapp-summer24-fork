@@ -3,7 +3,7 @@ name: Build and Test Without Docker
 on:
   pull_request:
     branches:
-      - main
+      - feature
 
 jobs:
   build-and-test:

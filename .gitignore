@@ -3,3 +3,9 @@ webapp
 *.pem
 *.json
 
+*.py
+
+*.txt
+
+template.pkr.hcl
+

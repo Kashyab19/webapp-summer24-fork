@@ -1,0 +1,118 @@
+name: Build and Deploy Packer Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install PostgreSQL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql postgresql-contrib
+        sudo service postgresql start
+        POSTGRES_USER=kashyabmurali
+        POSTGRES_PASSWORD=postgres
+        if [ -z "$POSTGRES_USER" ]; then POSTGRES_USER="defaultuser"; fi
+        if [ -z "$POSTGRES_PASSWORD" ]; then POSTGRES_PASSWORD="defaultpassword"; fi
+        sudo -u postgres psql -c "CREATE USER \"$POSTGRES_USER\" WITH SUPERUSER ENCRYPTED PASSWORD '$POSTGRES_PASSWORD';"
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO \"$POSTGRES_USER\";"
+
+    - name: Configure PostgreSQL (Enable uuid-ossp)
+      run: |
+        sudo -u postgres psql -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.21.6' # Adjust based on your project's Go version
+
+    - name: Cache Go Modules
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-go-modules
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install Dependencies
+      run: go mod tidy
+
+    - name: Build Project
+      run: go build -v ./...
+
+    - name: Archive application artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: webapp
+        path: bin/webapp
+
+    - name: Run Tests
+      run: go test -v ./...
+      env:
+        POSTGRES_USER: kashyabmurali
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: postgres
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+
+  build-packer-image:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Download the application artifact
+      - name: Download application artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: webapp
+          path: bin/
+
+      - name: Install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Decode and create account.json
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+
+      - name: Validate account.json
+        run: |
+          cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
+         
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+            version: 'latest'
+            project_id: ${{ secrets.GCP_PROJECT_ID }}
+            credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
+
+      - name: Install Packer
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install packer
+
+      - name: Run packer init
+        run: packer init .
+
+      - name: Build Packer Image
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: account.json
+        run: packer build -var 'repository_url=https://github.com/${{ github.repository }}.git' \
+                       -var 'branch=main' \
+                       -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' \
+                       new.pkr.hcl

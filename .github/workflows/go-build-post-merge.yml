@@ -3,7 +3,8 @@ name: A Simple Go Build Check after the PR merges
 on:
   push:
     branches:
-      - main
+      - feature
+
 
 jobs:
   build:

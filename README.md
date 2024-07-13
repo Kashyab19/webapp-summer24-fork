@@ -28,5 +28,12 @@ Before you begin, ensure you meet the following requirements, feel free to skip 
 
 For testing purposes: https://app.swaggerhub.com/apis-docs/csye6225-webapp/cloud-native-webapp/2024.spring.02
 
-Testing status..,
+=========================
+Summary of Assignment 04:
+=========================
+VPC: Isolated network environment.
+Machine Image (Packer): Template for launching instances.
+Compute Instances: Virtual servers launched from the machine image.
+Firewall: Secures the VPC by controlling traffic.
+=========================
 
