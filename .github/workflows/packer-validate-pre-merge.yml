@@ -1,35 +1,40 @@
 name: Packer CI before merging
 
 on:
-    pull_request:
-      branches:
-        - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   packer-validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
+      - name: Install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Decode and create account.json
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+
+      - name: Validate account.json
+        run: |
+          cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           version: 'latest'
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
 
       - name: Install Packer
         run: |
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
           sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt-get update && sudo apt-get install packer
-
-      - name: Create account.json
-        run: echo "${{ secrets.GCP_SA_KEY }}" > account.json
-
-      - name: Validate account.json
-        run: |
-          cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
       - name: Run packer init
         run: packer init .
@@ -38,4 +43,6 @@ jobs:
         run: packer fmt -check -diff .
 
       - name: Run packer validate
-        run: PACKER_LOG=1 packer validate .
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: account.json
+        run: packer validate .
