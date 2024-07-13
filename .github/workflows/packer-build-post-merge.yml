@@ -1,7 +1,7 @@
 name: Build, Test, and Deploy Packer Image
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 
@@ -86,7 +86,7 @@ jobs:
     - name: Build Packer Image
       env:
         GOOGLE_APPLICATION_CREDENTIALS: account.json
-      run: packer build -var 'repository_url=https://github.com/${{ github.repository }}.git' \
+      run: PACKER_LOG=1 packer build -var 'repository_url=https://github.com/${{ github.repository }}.git' \
                      -var 'branch=main' \
                      -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' \
                      new.pkr.hcl
