@@ -6,26 +6,32 @@ on:
         - main
 
 jobs:
-  packer-fmt:
+  packer-validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run packer fmt
-        run: packer fmt .
-      - name: Check for formatting changes
-        run: git diff --exit-code
-        shell: bash
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: 'latest'
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
 
-  packer-validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
       - name: Install Packer
         run: |
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
           sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt-get update && sudo apt-get install packer
+
+      - name: Create account.json
+        run: echo "${{ secrets.GCP_SA_KEY }}" > account.json
+
       - name: Run packer init
         run: packer init .
+
+      - name: Run packer fmt
+        run: packer fmt -check -diff .
+
       - name: Run packer validate
         run: packer validate .
