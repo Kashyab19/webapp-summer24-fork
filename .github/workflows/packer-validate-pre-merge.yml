@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run packer fmt
-        run: packer fmt -check -diff .
+        run: packer fmt .
       - name: Check for formatting changes
         run: git diff --exit-code
         shell: bash

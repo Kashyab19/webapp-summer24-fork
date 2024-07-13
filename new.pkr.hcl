@@ -37,9 +37,9 @@ source "googlecompute" "centos" {
   project_id          = var.project_id
   source_image_family = var.source_image_family
   region              = var.region
-  ssh_username = "centos"
-  zone = "us-central1-a"
-  credentials_file = "account.json"
+  ssh_username        = "centos"
+  zone                = "us-central1-a"
+  credentials_file    = "account.json"
 }
 
 build {

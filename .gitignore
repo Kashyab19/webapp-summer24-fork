@@ -7,3 +7,5 @@ webapp
 
 *.txt
 
+template.pkr.hcl
+
