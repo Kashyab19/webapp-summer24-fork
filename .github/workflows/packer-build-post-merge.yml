@@ -1,4 +1,4 @@
-name: Build and Deploy Packer Image
+name: Build, Test, and Deploy Packer Image
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  build-test-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
@@ -53,12 +53,6 @@ jobs:
     - name: Build Project
       run: go build -v ./...
 
-    - name: Archive application artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: webapp
-        path: bin/webapp
-
     - name: Run Tests
       run: go test -v ./...
       env:
@@ -68,51 +62,31 @@ jobs:
         POSTGRES_HOST: localhost
         POSTGRES_PORT: 5432
 
-  build-packer-image:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+    - name: Install required packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
 
-      # Download the application artifact
-      - name: Download application artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: webapp
-          path: bin/
+    - name: Decode and create account.json
+      run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
 
-      - name: Install required packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
+    - name: Validate account.json
+      run: |
+        cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
-      - name: Decode and create account.json
-        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+    - name: Install Packer
+      run: |
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+        sudo apt-get update && sudo apt-get install packer
 
-      - name: Validate account.json
-        run: |
-          cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
-         
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-            version: 'latest'
-            project_id: ${{ secrets.GCP_PROJECT_ID }}
-            credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
+    - name: Run packer init
+      run: packer init .
 
-      - name: Install Packer
-        run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt-get update && sudo apt-get install packer
-
-      - name: Run packer init
-        run: packer init .
-
-      - name: Build Packer Image
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: account.json
-        run: packer build -var 'repository_url=https://github.com/${{ github.repository }}.git' \
-                       -var 'branch=main' \
-                       -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' \
-                       new.pkr.hcl
+    - name: Build Packer Image
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: account.json
+      run: packer build -var 'repository_url=https://github.com/${{ github.repository }}.git' \
+                     -var 'branch=main' \
+                     -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' \
+                     new.pkr.hcl
