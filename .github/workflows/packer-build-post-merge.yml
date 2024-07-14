@@ -78,9 +78,8 @@ jobs:
       run: cat account.json
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
+      run: |
+        gcloud auth activate-service-account --key-file=account.json
 
     - name: Install Packer
       run: |
