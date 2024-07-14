@@ -3,7 +3,7 @@ name: Packer CI before merging
 on:
   pull_request:
     branches:
-      - main
+      - feature
 
 jobs:
   packer-validation:
