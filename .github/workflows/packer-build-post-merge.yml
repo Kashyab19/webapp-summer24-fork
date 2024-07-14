@@ -70,15 +70,22 @@ jobs:
     - name: Decode and create account.json
       run: |
         echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
-        cat account.json  # Debugging step to print the contents of account.json
+        echo "Decoded account.json content:"
+        cat account.json
 
     - name: Validate account.json
       run: |
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
-    - name: Authenticate to Google Cloud
+    - name: Authenticate to Google Cloud (google-github-actions/auth)
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
+
+    - name: Authenticate to Google Cloud (gcloud)
       run: |
         gcloud auth activate-service-account --key-file=account.json
+        gcloud auth list  # List authenticated accounts for verification
 
     - name: Install Packer
       run: |
