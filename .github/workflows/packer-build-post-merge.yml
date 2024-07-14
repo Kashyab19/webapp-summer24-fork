@@ -74,6 +74,9 @@ jobs:
       run: |
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
+    - name: Show account.json content
+      run: cat account.json
+
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
@@ -92,10 +95,15 @@ jobs:
 
     - name: Run packer validate
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: account.json
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
       run: packer validate .
+
+    - name: Show environment variables
+      run: env
 
     - name: Build Packer Image
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: account.json
-      run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+        PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
