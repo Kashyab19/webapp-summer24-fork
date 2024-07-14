@@ -80,7 +80,7 @@ jobs:
           version: 'latest'
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
-          
+
     - name: Install Packer
       run: |
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
@@ -90,7 +90,12 @@ jobs:
     - name: Run packer init
       run: packer init .
 
+    - name: Run packer validate
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: account.json
+      run: packer validate .
+
     - name: Build Packer Image
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
+        GOOGLE_APPLICATION_CREDENTIALS: account.json
       run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
