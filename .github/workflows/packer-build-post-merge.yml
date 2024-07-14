@@ -68,22 +68,20 @@ jobs:
         sudo apt-get install -y jq
 
     - name: Decode and create account.json
-      run: |
-        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
-        echo "Decoded account.json content:"
-        cat account.json
+      run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
 
     - name: Validate account.json
       run: |
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
-    - name: Authenticate to Google Cloud (google-github-actions/auth)
+    - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
 
-    - name: Authenticate to Google Cloud (gcloud)
+    - name: Authenticate to Google Cloud (gcloud CLI)
       run: |
+        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
         gcloud auth activate-service-account --key-file=account.json
         gcloud auth list  # List authenticated accounts for verification
 
