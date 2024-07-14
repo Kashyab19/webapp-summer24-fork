@@ -8,7 +8,7 @@ on:
 jobs:
   build-test-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
 
@@ -68,14 +68,13 @@ jobs:
         sudo apt-get install -y jq
 
     - name: Decode and create account.json
-      run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+      run: |
+        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+        cat account.json  # Debugging step to print the contents of account.json
 
     - name: Validate account.json
       run: |
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
-
-    - name: Show account.json content
-      run: cat account.json
 
     - name: Authenticate to Google Cloud
       run: |
