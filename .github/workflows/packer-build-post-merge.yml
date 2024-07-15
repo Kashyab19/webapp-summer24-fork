@@ -89,20 +89,15 @@ jobs:
     - name: Run packer init
       run: packer init .
 
-    - name: Run packer validate
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account-2.json
-      run: packer validate .
-
     - name: Verify GOOGLE_APPLICATION_CREDENTIALS before build
       run: |
         echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
-        cat ${{ github.workspace }}/account-2.json
+        cat account-2.json
 
     - name: Build Packer Image
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account-2.json
+        GOOGLE_APPLICATION_CREDENTIALS: account-2.json
       run: |
         echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
-        cat ${{ github.workspace }}/account-2.json
+        cat account-2.json
         PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
