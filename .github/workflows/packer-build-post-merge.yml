@@ -35,17 +35,11 @@ jobs:
 
     - name: Cache Go Modules
       uses: actions/cache@v2
-      env:
-        cache-name: cache-go-modules
       with:
         path: |
           ~/go/pkg/mod
           ~/.cache/go-build
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
 
     - name: Install Dependencies
       run: go mod tidy
@@ -68,13 +62,10 @@ jobs:
         sudo apt-get install -y jq
 
     - name: Decode and create account.json
-      id: decode_sa_key
       run: |
         echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+        echo "Decoded account.json content:"
         cat account.json
-
-    - name: Validate account.json
-      run: |
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
     - name: Set up Cloud SDK
@@ -98,7 +89,8 @@ jobs:
 
     - name: Build Packer Image
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: account.json
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
       run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS_1=$GOOGLE_APPLICATION_CREDENTIALS"
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+        cat $GOOGLE_APPLICATION_CREDENTIALS
         PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
