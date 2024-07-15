@@ -39,7 +39,7 @@ source "googlecompute" "centos" {
   region              = var.region
   ssh_username        = "centos"
   zone                = "us-central1-a"
-  credentials_file    = "account.json"
+  credentials_file    = "./account.json"
 }
 
 build {
