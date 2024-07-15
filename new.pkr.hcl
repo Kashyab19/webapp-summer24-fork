@@ -39,14 +39,14 @@ source "googlecompute" "centos" {
   region              = var.region
   ssh_username        = "centos"
   zone                = "us-central1-a"
-  credentials_file    = "./account.json"
+  credentials_file    = "./account-2.json"
 }
 
 build {
   sources = ["source.googlecompute.centos"]
 
   provisioner "file" {
-    source      = "./account.json"
+    source      = "./account-2.json"
     destination = "/tmp/account.json"
   }
 

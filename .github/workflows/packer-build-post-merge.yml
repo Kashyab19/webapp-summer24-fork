@@ -63,7 +63,7 @@ jobs:
 
     - name: Decode and create account.json
       run: |
-        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+        echo "${{ secrets.GCP_SA_KEY_2 }}" > account.json
         echo "Decoded account.json content:"
         cat account.json
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
@@ -73,7 +73,7 @@ jobs:
       with:
         version: 'latest'
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: ${{ secrets.GCP_SA_KEY_2 }}
 
     - name: Install Packer
       run: |
