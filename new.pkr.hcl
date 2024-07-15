@@ -46,13 +46,13 @@ build {
   sources = ["source.googlecompute.centos"]
 
   provisioner "file" {
-    source      = "account.json"
+    source      = "./account.json"
     destination = "/tmp/account.json"
   }
 
   provisioner "shell" {
     inline = [
-      "gcloud auth activate-service-account --key-file /tmp/account.json",
+      
 
       # Update and install necessary packages
       "sudo dnf -y update",
