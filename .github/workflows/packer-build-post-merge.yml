@@ -73,6 +73,10 @@ jobs:
         sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
         sudo apt-get update && sudo apt-get install packer
 
+    - name: Set up GCP Credentials for Packer
+      run: |
+        echo '${{ secrets.GCP_SA_KEY }}' > packer-service-account.json
+
     - name: Run packer init
       run: packer init .
 
@@ -80,12 +84,6 @@ jobs:
       env:
         PKR_VAR_account_file: ${{ github.workspace }}/account.json
       run: packer validate .
-
-    
-      # Prepare GCP credentials for Packer
-    - name: Set up GCP Credentials for Packer
-      run: |
-        echo '${{ secrets.GCP_SA_KEY }}' > packer-service-account.json
 
       # Build the Packer image
     - name: Build Packer image
