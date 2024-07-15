@@ -91,7 +91,7 @@ jobs:
 
     - name: Build Packer Image
       env:
-        GOOGLE_APPLICATION_CREDENTIALS_1: ${{ github.workspace }}/account.json
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
       run: |
         echo "GOOGLE_APPLICATION_CREDENTIALS_1=$GOOGLE_APPLICATION_CREDENTIALS"
         PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
