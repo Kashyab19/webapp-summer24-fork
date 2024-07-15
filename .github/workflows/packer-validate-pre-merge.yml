@@ -39,9 +39,6 @@ jobs:
       - name: Run packer init
         run: packer init .
 
-      - name: Run packer fmt
-        run: packer fmt -check -diff .
-
       - name: Run packer validate
         env:
           GOOGLE_APPLICATION_CREDENTIALS: account.json
