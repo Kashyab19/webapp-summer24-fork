@@ -63,7 +63,7 @@ jobs:
 
     - name: Decode and create account.json
       run: |
-        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account-2.json
+        echo "${{ secrets.GCP_SA_KEY_2 }}" > account-2.json
         echo "Decoded account-2.json content:"
         cat account-2.json
         cat account-2.json | jq . > /dev/null || (echo "Invalid JSON in account-2.json" && exit 1)
@@ -71,7 +71,7 @@ jobs:
     - name: Set up Cloud AUTH SDK
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: "${{ secrets.GCP_SA_KEY_BASE64 }}"
+        credentials_json: "${{ secrets.GCP_SA_KEY_2 }}"
 
     - name: GCloud SDK setup
       uses: 'google-github-actions/setup-gcloud@v2'
