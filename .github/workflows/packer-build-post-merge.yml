@@ -67,22 +67,31 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
+    - name: Decode and create account.json
+      id: decode_sa_key
+      run: |
+        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
+        cat account.json
+
+    - name: Validate account.json
+      run: |
+        cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
+
     - name: Install Packer
       run: |
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
         sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
         sudo apt-get update && sudo apt-get install packer
 
-    - name: Set up GCP Credentials for Packer
-      run: |
-        echo '${{ fromJSON(secrets.GCP_SA_KEY) }}' > account.json
-
     - name: Run packer init
       run: packer init .
 
-      # Build the Packer image
-    - name: Build Packer image
-      run: |
-        packer build .
+    - name: Show environment variables
+      run: env
+
+    - name: Build Packer Image
       env:
-        PKR_VAR_account_file: ${{ github.workspace }}/account.json
+        GOOGLE_APPLICATION_CREDENTIALS_1: ${{ github.workspace }}/account.json
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS_1=$GOOGLE_APPLICATION_CREDENTIALS"
+        PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
