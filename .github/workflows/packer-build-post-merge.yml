@@ -95,9 +95,4 @@ jobs:
         cat account-2.json
 
     - name: Build Packer Image
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: account-2.json
-      run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
-        cat account-2.json
-        PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+      run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
