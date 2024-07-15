@@ -73,7 +73,7 @@ jobs:
       with:
         version: 'latest'
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        credentials_json: ${{ secrets.GCP_SA_KEY_BASE64 }}
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
     - name: Install Packer
       run: |
@@ -81,16 +81,28 @@ jobs:
         sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
         sudo apt-get update && sudo apt-get install packer
 
+    - name: Verify GOOGLE_APPLICATION_CREDENTIALS before validate
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
+        cat ${{ github.workspace }}/account.json
+
     - name: Run packer init
       run: packer init .
 
-    - name: Show environment variables
-      run: env
+    - name: Run packer validate
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
+      run: packer validate .
+
+    - name: Verify GOOGLE_APPLICATION_CREDENTIALS before build
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
+        cat ${{ github.workspace }}/account.json
 
     - name: Build Packer Image
       env:
         GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
       run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
-        cat $GOOGLE_APPLICATION_CREDENTIALS
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
+        cat ${{ github.workspace }}/account.json
         PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
