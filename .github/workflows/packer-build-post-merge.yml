@@ -75,7 +75,7 @@ jobs:
 
     - name: Set up GCP Credentials for Packer
       run: |
-        echo '${{ secrets.GCP_SA_KEY }}' > packer-service-account.json
+        echo '${{ secrets.GCP_SA_KEY }}' > account.json
 
     - name: Run packer init
       run: packer init .
@@ -85,4 +85,4 @@ jobs:
       run: |
         packer build .
       env:
-        PKR_VAR_account_file: ${{ github.workspace }}/packer-service-account.json
+        PKR_VAR_account_file: ${{ github.workspace }}/account.json
