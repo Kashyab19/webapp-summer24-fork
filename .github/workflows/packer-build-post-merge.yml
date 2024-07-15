@@ -65,8 +65,8 @@ jobs:
       run: |
         echo "${{ secrets.GCP_SA_KEY_2 }}" > account-2.json
         echo "Decoded account.json content:"
-        cat account.json
-        cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
+        cat account-2.json
+        cat account-2.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
