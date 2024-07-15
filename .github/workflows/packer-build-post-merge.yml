@@ -67,26 +67,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
-    - name: Decode and create account.json
-      id: decode_sa_key
-      run: |
-        echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 --decode > account.json
-        cat account.json
-
-    - name: Validate account.json
-      run: |
-        cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
-
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ steps.decode_sa_key.outputs.decoded_json }}
-
-    - name: Authenticate to Google Cloud (gcloud CLI)
-      run: |
-        gcloud auth activate-service-account --key-file=account.json
-        gcloud auth list  # List authenticated accounts for verification
-
     - name: Install Packer
       run: |
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
@@ -98,15 +78,18 @@ jobs:
 
     - name: Run packer validate
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
+        PKR_VAR_account_file: ${{ github.workspace }}/account.json
       run: packer validate .
 
-    - name: Show environment variables
-      run: env
-
-    - name: Build Packer Image
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account.json
+    
+      # Prepare GCP credentials for Packer
+    - name: Set up GCP Credentials for Packer
       run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
-        PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+        echo '${{ secrets.GCP_SA_KEY }}' > packer-service-account.json
+
+      # Build the Packer image
+    - name: Build Packer image
+      run: |
+        packer build .
+      env:
+        PKR_VAR_account_file: ${{ github.workspace }}/packer-service-account.json
