@@ -71,7 +71,7 @@ jobs:
     - name: Set up Cloud AUTH SDK
       uses: google-github-actions/auth@v2
       with:
-        service_account: account-2.json
+        credentials_json: "${{ secrets.GCP_SA_KEY_BASE64 }}"
 
     - name: GCloud SDK setup
       uses: 'google-github-actions/setup-gcloud@v2'
