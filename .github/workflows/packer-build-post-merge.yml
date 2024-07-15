@@ -63,7 +63,7 @@ jobs:
 
     - name: Decode and create account.json
       run: |
-        echo "${{ secrets.GCP_SA_KEY_2 }}" > account.json
+        echo "${{ secrets.GCP_SA_KEY_2 }}" > account-2.json
         echo "Decoded account.json content:"
         cat account.json
         cat account.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
