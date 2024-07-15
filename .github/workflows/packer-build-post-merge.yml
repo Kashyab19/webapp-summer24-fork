@@ -1,98 +1,78 @@
-name: Build, Test, and Deploy Packer Image
+name: Build, Test, and Deploy on PR Merge
 
 on:
   pull_request:
     branches:
       - main
+      - master # Adjust based on your target branch for merges
 
 jobs:
-  build-test-and-deploy:
+  integration-and-build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Install PostgreSQL
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql postgresql-contrib
-        sudo service postgresql start
-        POSTGRES_USER=kashyabmurali
-        POSTGRES_PASSWORD=postgres
-        if [ -z "$POSTGRES_USER" ]; then POSTGRES_USER="defaultuser"; fi
-        if [ -z "$POSTGRES_PASSWORD" ]; then POSTGRES_PASSWORD="defaultpassword"; fi
-        sudo -u postgres psql -c "CREATE USER \"$POSTGRES_USER\" WITH SUPERUSER ENCRYPTED PASSWORD '$POSTGRES_PASSWORD';"
-        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO \"$POSTGRES_USER\";"
+      # Integration testing steps
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+          sudo service postgresql start
+          sudo -u postgres psql -c "CREATE USER ${{ secrets.POSTGRES_USER }} WITH ENCRYPTED PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO ${{ secrets.POSTGRES_USER }};"
 
-    - name: Configure PostgreSQL (Enable uuid-ossp)
-      run: |
-        sudo -u postgres psql -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+      - name: Configure PostgreSQL (Enable uuid-ossp)
+        run: |
+          sudo -u postgres psql -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '1.21.6' # Adjust based on your project's Go version
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.21.6'
 
-    - name: Cache Go Modules
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/go/pkg/mod
-          ~/.cache/go-build
-        key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
+      - name: Cache Go Modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
 
-    - name: Install Dependencies
-      run: go mod tidy
+      - name: Install Dependencies
+        run: go mod tidy
 
-    - name: Build Project
-      run: go build -v ./...
+      - name: Build Project
+        run: go build -v ./...
 
-    - name: Run Tests
-      run: go test -v ./...
-      env:
-        POSTGRES_USER: kashyabmurali
-        POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: postgres
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
+      - name: Run Tests Run Test
+        run: go test -v ./...
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
 
-    - name: Install required packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y jq
+      - name: Build application artifact
+        run: go build -o ./bin/webapp
 
-    - name: Decode and create account.json
-      run: |
-        echo "${{ secrets.GCP_SA_KEY_2 }}" > account-2.json
-        echo "Decoded account.json content:"
-        cat account-2.json
-        cat account-2.json | jq . > /dev/null || (echo "Invalid JSON in account.json" && exit 1)
+      # Set up Packer (specify the version that matches your requirements)
+      - name: Set up Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          packer-version: '1.10.1'
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        version: 'latest'
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        credentials_json: ${{ secrets.GCP_SA_KEY_2 }}
+      - name: Initialize Packer
+        run: packer init .
 
-    - name: Install Packer
-      run: |
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-        sudo apt-get update && sudo apt-get install packer
+      # Prepare GCP credentials for Packer
+      - name: Set up GCP Credentials for Packer
+        run: |
+          echo '${{ secrets.GCP_SA_KEY_2 }}' > account-2.json
 
-    - name: Verify GOOGLE_APPLICATION_CREDENTIALS before validate
-      run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
-        cat ${{ github.workspace }}/account-2.json
-
-    - name: Run packer init
-      run: packer init .
-
-    - name: Verify GOOGLE_APPLICATION_CREDENTIALS before build
-      run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATIONS_CREDENTIALS"
-        cat account-2.json
-
-    - name: Build Packer Image
-      run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+      # Build the Packer image
+      - name: Build Packer image
+        run: |
+          PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+        env:
+          PKR_VAR_account_file: ${{ github.workspace }}/account-2.json
