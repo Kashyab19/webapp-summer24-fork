@@ -61,20 +61,17 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
-    - name: Decode and create account.json
+    - name: Copy secret to account.json
       run: |
         echo "${{ secrets.GCP_SA_KEY_2 }}" > account-2.json
         echo "Decoded account-2.json content:"
         cat account-2.json
         cat account-2.json | jq . > /dev/null || (echo "Invalid JSON in account-2.json" && exit 1)
 
-    - name: Set up Cloud AUTH SDK
-      uses: google-github-actions/auth@v2
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
       with:
-        credentials_json: "${{ secrets.GCP_SA_KEY_2 }}"
-
-    - name: GCloud SDK setup
-      uses: 'google-github-actions/setup-gcloud@v2'
+        credentials_json: ${{ secrets.GCP_SA_KEY_2 }}
 
     - name: Install Packer
       run: |
@@ -93,4 +90,4 @@ jobs:
     - name: Build Packer Image
       run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: account-2.json
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account-2.json
