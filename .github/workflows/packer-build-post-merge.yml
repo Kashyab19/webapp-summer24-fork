@@ -80,11 +80,6 @@ jobs:
     - name: Run packer init
       run: packer init .
 
-    - name: Run packer validate
-      env:
-        PKR_VAR_account_file: ${{ github.workspace }}/account.json
-      run: packer validate .
-
       # Build the Packer image
     - name: Build Packer image
       run: |
