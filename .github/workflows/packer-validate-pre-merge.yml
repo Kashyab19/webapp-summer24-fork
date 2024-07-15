@@ -3,7 +3,7 @@ name: Packer CI before merging
 on:
   pull_request:
     branches:
-      - feature
+      - main
 
 jobs:
   packer-validation:
@@ -45,4 +45,6 @@ jobs:
       - name: Run packer validate
         env:
           GOOGLE_APPLICATION_CREDENTIALS: account.json
-        run: packer validate .
+        run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+
+        
