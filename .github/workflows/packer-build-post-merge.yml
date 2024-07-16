@@ -85,4 +85,4 @@ jobs:
       env: 
         GCP_PROJECT_ID_S: ${{ secrets.GCP_PROJECT_ID }}
       run: |
-        echo "${{ secrets.GCP_PROJECT_ID_S }}"
+        echo "${{ secrets.GCP_PROJECT_ID }}"
