@@ -61,22 +61,28 @@ jobs:
     #     sudo apt-get update
     #     sudo apt-get install -y jq
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0.2.0 # Updated to use a specific version; check for the latest version
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY_2 }}
-        export_default_credentials: true
+    # - name: Set up Cloud SDK
+    #   uses: google-github-actions/setup-gcloud@v0.2.0 # Updated to use a specific version; check for the latest version
+    #   with:
+    #     project_id: ${{ secrets.GCP_PROJECT_ID }}
+    #     service_account_key: ${{ secrets.GCP_SA_KEY_2 }}
+    #     export_default_credentials: true
 
-    - name: Install Packer
+    # - name: Install Packer
+    #   run: |
+    #     echo "${{ secrets.GCP_SA_KEY_2 }} ${{ secrets.GCP_PROJECT_ID }}"
+    #     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+    #     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    #     sudo apt-get update && sudo apt-get install packer
+
+    # - name: Run packer init
+    #   run: packer init new.pkr.hcl
+
+    # - name: Build Packer Image
+    #   run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+
+    - name: Checking ENV
+      env: 
+        GCP_PROJECT_ID_S: ${{ secrets.GCP_PROJECT_ID }}
       run: |
-        echo "${{ secrets.GCP_SA_KEY_2 }} ${{ secrets.GCP_PROJECT_ID }}"
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-        sudo apt-get update && sudo apt-get install packer
-
-    - name: Run packer init
-      run: packer init new.pkr.hcl
-
-    - name: Build Packer Image
-      run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
+        echo "${{ secrets.GCP_PROJECT_ID_S }}"
