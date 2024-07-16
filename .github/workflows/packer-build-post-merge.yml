@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Install PostgreSQL
       run: |
@@ -61,17 +61,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
-    - name: Copy secret to account.json
-      run: |
-        echo "${{ secrets.GCP_SA_KEY_2 }}" > account-2.json
-        echo "Decoded account-2.json content:"
-        cat account-2.json
-        cat account-2.json | jq . > /dev/null || (echo "Invalid JSON in account-2.json" && exit 1)
-
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0.2.0 # Updated to use a specific version; check for the latest version
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY_2 }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY_2 }}
+        export_default_credentials: true
 
     - name: Install Packer
       run: |
@@ -79,15 +74,8 @@ jobs:
         sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
         sudo apt-get update && sudo apt-get install packer
 
-    - name: Verify GOOGLE_APPLICATION_CREDENTIALS before validate
-      run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
-        cat account-2.json
-
     - name: Run packer init
-      run: packer init .
+      run: packer init new.pkr.hcl
 
     - name: Build Packer Image
       run: PACKER_LOG=1 packer build -var-file=variables.pkrvars.hcl new.pkr.hcl
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/account-2.json
